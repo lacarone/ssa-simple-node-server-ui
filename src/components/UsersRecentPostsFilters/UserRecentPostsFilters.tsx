@@ -7,8 +7,11 @@ import {
 function UserRecentPostsFilters(props: any) {
     // gets props.userRecentPosts
     // UI widget
-    //
-    const [resultsPerPage, setResultsPerPage] = useState('3');
+    
+    const handleResultsPerPage = (n) => {
+        props.setResultsPerPage(Number(n));
+    };
+    
 
     return (
         <Container size="lg">
@@ -18,8 +21,8 @@ function UserRecentPostsFilters(props: any) {
                         <Title align="center" order={6}>Results per page</Title>
                         <Space h="sm" />
                         <SegmentedControl
-                            value={resultsPerPage} 
-                            onChange={setResultsPerPage}
+                            value={props.resultsPerPage} 
+                            onChange={handleResultsPerPage}
                             color="white" 
                             radius="md" 
                             size="md"
@@ -37,7 +40,9 @@ function UserRecentPostsFilters(props: any) {
             </>
             <Center>
                 <Pagination 
-                    total={20} 
+                    total={props.totalPages} 
+                    page={props.currentPage}
+                    onChange={props.setCurrentPage}
                     color="gray" 
                     size="md" 
                     radius="md" 

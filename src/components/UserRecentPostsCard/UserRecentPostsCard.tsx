@@ -24,9 +24,9 @@ function UserRecentPostsCard(props: any) {
     // Transform posts into JSX
     const userPosts = (() => {
         if (props.userRecentPosts?.posts.length) {
-            return props.userRecentPosts?.posts.map((post: object) => {
+            return props.userRecentPosts?.posts.map((post: object, i: any) => {
                 return (
-                    <UserPostCard userPostCard={post} />
+                    <UserPostCard key={(Number(i)*4)} userPostCard={post} />
                 );
             });
         }

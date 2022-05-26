@@ -2,12 +2,20 @@ import {
     Avatar,
     Title, 
     Card, Group, Center, Container, Space, Image,
+    LoadingOverlay,
+    Affix,
+    Button,
 } from '@mantine/core';
 import UserRecentPostsCard from '../../components/UserRecentPostsCard/UserRecentPostsCard';
 import UserRecentPostsFilters from '../../components/UsersRecentPostsFilters/UserRecentPostsFilters';
 import SSALogo from '../../components/SSALogo/SSALogo';
 import { AvatarGenerator } from 'random-avatar-generator';
 import { UserRecentPosts } from '../../types/usersTypes';
+import { useEffect, useState } from 'react';
+import { Check, UserPlus, Users } from 'tabler-icons-react';
+import getUsersByPage from './_getUsersByPage';
+import generateUsers from './_generateUsers';
+import { showNotification } from '@mantine/notifications';
 
 
 function UserRecentPostsList(props: any) {
@@ -16,11 +24,67 @@ function UserRecentPostsList(props: any) {
     const avatarGenerator = new AvatarGenerator();
     const avatarPlaceholder = '';
     const randomAvatar = avatarGenerator.generateRandomAvatar();
-    /**
-     * DevNote
-     * here we would have some kind of URL validator util function
-     * will come back to add it if I have some time remaining
-     */
+    const [fetchingData, setFetchingData] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [resultsPerPage, setResultsPerPage] = useState(3);
+    const [totalPages, setTotalPages] = useState(1);
+    const [usersData, setUsersData] = useState([]);
+    const [generatingMoreUsers, setGeneratingMoreUsers] = useState(false);
+
+
+    const generateMoreUsers = () => {
+      setFetchingData(true);
+      setGeneratingMoreUsers(true);
+      generateUsers(7, 5)
+        .then((res: any) => {
+          if (res?.status >= 200 && res?.status < 300) {
+            // fake UX delay
+            setTimeout(() => {
+                setCurrentPage(1);
+                showNotification({
+                    disallowClose: true,
+                    autoClose: 2600,
+                    title: "Users Generated",
+                    message: 'Successfully generated more users',
+                    color: 'teal',
+                    radius: 'md',
+                    icon: <Check />,
+                });
+                setGeneratingMoreUsers(false);
+                setFetchingData(false);
+              }, 1800);
+          }
+        })
+        .catch((error: any) => {
+          console.log(error);
+        })
+    }
+
+    const getUsers = () => {
+      setFetchingData(true);
+      getUsersByPage(currentPage, resultsPerPage)
+        .then((res: any) => {
+          if (res?.status === 200 || res?.status === 202) {
+            setTotalPages(res.data.pagination.total_pages);
+            if (res.data.data.length) {
+              setUsersData(res.data.data);
+            }
+            else {
+              setTotalPages(1);
+              setCurrentPage(1);
+            }
+          }
+          setFetchingData(false);
+        })
+        .catch((error: any) => {
+          console.log(error);
+        })
+    }
+
+    useEffect(() => {
+      getUsers();
+    },
+    [currentPage, resultsPerPage]);
 
     const fakeData = [
         {
@@ -60,12 +124,15 @@ function UserRecentPostsList(props: any) {
         }
       ];
 
-    const usersRecentPostsList = fakeData.map(
-            (userPosts) => <UserRecentPostsCard userRecentPosts={userPosts} />
+    const usersRecentPostsList = usersData.map(
+            (userPosts, index) => <UserRecentPostsCard key={index} userRecentPosts={userPosts} />
         );
 
     return (
+      <>
+        <LoadingOverlay style={{position: 'fixed'}} visible={fetchingData} />
         <Container py={35} px={16} size="lg">
+
             <Center>
                     <SSALogo />
             </Center>
@@ -76,7 +143,14 @@ function UserRecentPostsList(props: any) {
             <Space h="md" />
             <Center>
                 <Container size="lg">
-                    <UserRecentPostsFilters showResultsPerPageFilter={true} />
+                    <UserRecentPostsFilters 
+                      currentPage={currentPage}
+                      setCurrentPage={setCurrentPage}
+                      totalPages={totalPages} 
+                      resultsPerPage={resultsPerPage}
+                      setResultsPerPage={setResultsPerPage}
+                      showResultsPerPageFilter={true} 
+                    />
                 </Container>
             </Center>
             <Space h="lg" />
@@ -84,13 +158,32 @@ function UserRecentPostsList(props: any) {
                 <Container size="xs">
                     {usersRecentPostsList}
                     <Space h="md" />
-                    <UserRecentPostsFilters />
+                    <UserRecentPostsFilters 
+                      currentPage={currentPage}
+                      setCurrentPage={setCurrentPage}
+                      totalPages={totalPages} 
+                      resultsPerPage={resultsPerPage}
+                      setResultsPerPage={setResultsPerPage}
+                    />
                     <Space h="xl" />
                     <Space h="xl" />
                     <SSALogo />
                 </Container>
             </Center>
         </Container>
+        <Affix position={{ bottom: 20, right: 20 }}>
+          <Button 
+            leftIcon={<UserPlus size={18} />} 
+            radius="md" 
+            loading={generatingMoreUsers} 
+            onClick={generateMoreUsers}
+            
+            color="teal"
+          >
+            Add more users
+          </Button>
+        </Affix>
+      </>
     )
 }
 
